@@ -22,7 +22,7 @@ return new class extends Migration
 			$table->unsignedBigInteger('category_id')->nullable();
 			$table->decimal('balance', 10, 2);
 			$table->decimal('closing_balance', 10, 2)->nullable();
-			$table->unsignedBigInteger('bank_statement_id');
+			$table->uuid('bank_statement_id');
 			$table->timestamps();
 		});
 	}

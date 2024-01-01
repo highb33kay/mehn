@@ -14,6 +14,8 @@ return new class extends Migration
 		Schema::create('bank_statements', function (Blueprint $table) {
 			$table->uuid('id')->primary()->unique()->index();
 			$table->foreignUuid('user_id')->constrained();
+			$table->decimal('opening_balance', 10, 2)->nullable();
+			$table->decimal('closing_balance', 10, 2)->nullable();
 			$table->timestamps();
 		});
 	}

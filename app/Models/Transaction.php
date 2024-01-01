@@ -28,6 +28,8 @@ class Transaction extends Model
 		'bank_statement_id',
 	];
 
+	protected $keyType = 'uuid';
+
 	/**
 	 * relationship with bankStatement
 	 *
