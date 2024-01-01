@@ -51,12 +51,9 @@ class BankStatementController extends Controller
 				$toFrom = $record['To / From'];
 				$description = $record['Description'];
 				$balance = $record['Balance'];
-				$closingBalance = $record['ClosingBalance'];
+				$closingBalance = $record['Closing balance'];
 
 				// Capture the opening balance from the first record
-				if ($openingBalance === 0) {
-					$openingBalance = $record['Opening Balance'];
-				}
 
 				// Save the transaction to the database with a reference to the BankStatement record
 				$transaction = new Transaction([
