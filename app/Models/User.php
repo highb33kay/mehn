@@ -36,6 +36,11 @@ class User extends Authenticatable
 	];
 
 	/**
+	 * protected keyType
+	 */
+	protected $keyType = 'string';
+
+	/**
 	 * The attributes that should be cast.
 	 *
 	 * @var array<string, string>
