@@ -16,6 +16,7 @@ return new class extends Migration
 			$table->foreignUuid('user_id')->constrained();
 			$table->decimal('opening_balance', 10, 2)->nullable();
 			$table->decimal('closing_balance', 10, 2)->nullable();
+			$table->string('filename')->unique();
 			$table->timestamps();
 		});
 	}

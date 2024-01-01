@@ -24,30 +24,37 @@ class BankStatementController extends Controller
 				'csv_file' => 'required|mimes:csv,txt|max:10240',
 			]);
 
+			// if the filename is already in the database, return an error
+			$filename = $request->file('csv_file')->getClientOriginalName();
+			$existingStatement = BankStatement::where('filename', $filename)->first();
+
+			if ($existingStatement) {
+				return response()->json([
+					'success' => false,
+					'data' => null,
+					'message' => 'A bank statement with the same filename already exists',
+				], 400);
+			}
+
 			// generate a bank statement id
 			$bankStatementId = uniqid();
-
-			print_r($bankStatementId);
-			print("\n");
-			print_r($request->user()->id);
 
 			$file = $request->file('csv_file');
 			$csv = Reader::createFromPath($file->getPathname(), 'r');
 			$csv->setHeaderOffset(0);
 
 			$records = $csv->getRecords();
-			$openingBalance = 0;
-			$closingBalance = 0;
 			$bankStatementId = $request->input('bank_statement_id');
 
 			// Associate the current user with the bank statement
 			$user = Auth::user();
 			$bankStatement = $user->bankStatements()->firstOrNew(['id' => $bankStatementId]);
+			$bankStatement->filename = $filename;
 			$bankStatement->save();
 
 
 			// Save the opening balance to the database
-			$bankStatement->opening_balance = $openingBalance;
+			$openingBalance = null;
 
 			foreach ($records as $record) {
 				// Extract data from the CSV record
@@ -60,56 +67,18 @@ class BankStatementController extends Controller
 				$balance = $record['Balance'];
 				$closingBalance = $record['Closing balance'];
 
-				print_r($date);
-				print("\n");
-				print_r($moneyIn);
-				print("\n");
-				print_r($moneyOut);
-				print("\n");
-				print_r($category);
-				print("\n");
-				print_r($toFrom);
-				print("\n");
-				print_r($description);
-				print("\n");
-				print_r($balance);
-				print("\n");
-				print_r($closingBalance);
-				print("\n");
-
-
-				// convert the data before saving to the database
-				$date = date('Y-m-d', strtotime($date));
-				$moneyIn = $moneyIn;
-				$moneyOut = $moneyOut;
-				$description = $description ?: null;
-				$balance = $balance;
-				$closingBalance = $closingBalance;
-
 				// remove the ? from the money in, money out, balance and closing balance
 				$moneyIn = str_replace('?', '', $moneyIn);
 				$moneyOut = str_replace('?', '', $moneyOut);
 				$balance = str_replace('?', '', $balance);
 				$closingBalance = str_replace('?', '', $closingBalance);
 
-				$amount = 0;
-
 				// set the first record as the opening balance
-				if ($balance > 0) {
+				if ($openingBalance === null) {
 					$openingBalance = $balance;
-					print_r("Opening Balance");
-				} else
-
-				if ($moneyIn > 0) {
-					$amount = $moneyIn;
-					print_r("Money In");
-					print_r($amount);
-				} else {
-					$amount = $moneyOut;
-					print_r("Money Out");
 				}
 
-				print_r($bankStatementId);
+				$amount = $moneyIn > 0 ? $moneyIn : $moneyOut;
 
 				// Save the transaction to the database with a reference to the BankStatement record
 				$transaction = new Transaction([
@@ -117,8 +86,8 @@ class BankStatementController extends Controller
 					'amount' => $amount,
 					'description' => $description,
 					'type' => $moneyIn ? 'credit' : 'debit',
-					'sender' => $moneyIn ? null : $toFrom,
-					'recipient' => $moneyIn ? $toFrom : null,
+					'sender' => $moneyIn ? $toFrom : 'Alesinloye Ibukun/20000000261902/Kuda',
+					'recipient' => $moneyIn ? 'Alesinloye Ibukun/20000000261902/Kuda' : $toFrom,
 					'category_id' => $this->getCategoryId($category),
 					'balance' => $balance,
 					'closing_balance' => $closingBalance, // Assuming 'closing_balance' is the correct field name
@@ -134,8 +103,8 @@ class BankStatementController extends Controller
 
 			// Update the closing balance as the value for the last closing balance record
 			$bankStatement->closing_balance = $closingBalance;
-
-
+			$bankStatement->opening_balance = $openingBalance;
+			$bankStatement->save();
 
 
 			return response()->json(['message' => 'CSV file uploaded and processed successfully']);
