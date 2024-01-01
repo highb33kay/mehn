@@ -67,23 +67,19 @@ class BankStatementController extends Controller
 				$balance = $record['Balance'];
 				$closingBalance = $record['Closing balance'];
 
-				// remove the ? from the money in, money out, balance and closing balance
-				$moneyIn = str_replace('?', '', $moneyIn);
-				$moneyOut = str_replace('?', '', $moneyOut);
-				$balance = str_replace('?', '', $balance);
-				$closingBalance = str_replace('?', '', $closingBalance);
+				// Remove the '?' from the money in, money out, balance, and closing balance
+				$moneyIn = $this->removeQuestionMark($moneyIn);
+				$moneyOut = $this->removeQuestionMark($moneyOut);
+				$balance = $this->removeQuestionMark($balance);
+				$closingBalance = $this->removeQuestionMark($closingBalance);
 
 				// set the first record as the opening balance
-				if ($openingBalance === null) {
-					$openingBalance = $balance;
-				}
-
-				$amount = $moneyIn > 0 ? $moneyIn : $moneyOut;
+				$openingBalance = $openingBalance ?? $balance;
 
 				// Save the transaction to the database with a reference to the BankStatement record
 				$transaction = new Transaction([
 					'date' => $date,
-					'amount' => $amount,
+					'amount' => $moneyIn > 0 ? $moneyIn : $moneyOut,
 					'description' => $description,
 					'type' => $moneyIn ? 'credit' : 'debit',
 					'sender' => $moneyIn ? $toFrom : 'Alesinloye Ibukun/20000000261902/Kuda',
@@ -97,14 +93,13 @@ class BankStatementController extends Controller
 				$bankStatement->transactions()->save($transaction);
 			}
 
-			print_r($closingBalance);
-			print("\n");
-			print_r($openingBalance);
 
 			// Update the closing balance as the value for the last closing balance record
-			$bankStatement->closing_balance = $closingBalance;
-			$bankStatement->opening_balance = $openingBalance;
-			$bankStatement->save();
+			$bankStatement->update([
+				'closing_balance' => $closingBalance,
+				'opening_balance' => $openingBalance,
+			]);
+
 
 
 			return response()->json(['message' => 'CSV file uploaded and processed successfully']);
@@ -141,5 +136,16 @@ class BankStatementController extends Controller
 		}
 
 		return $category->id;
+	}
+
+	/**
+	 * Remove the '?' character from a string.
+	 *
+	 * @param string|null $value
+	 * @return string|null
+	 */
+	private function removeQuestionMark(?string $value): ?string
+	{
+		return $value ? str_replace('?', '', $value) : null;
 	}
 }
