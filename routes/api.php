@@ -22,7 +22,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-	Route::post('/analyze-bank-statement', [BankStatementController::class, 'analyze']);
+	Route::post('/analyze', [BankStatementController::class, 'analyze']);
 });
 
 // Register: Register a new user
